@@ -9,6 +9,13 @@ using System.Threading.Tasks;
 // Known problems:
 // Leblanc doesn't show up in counted champions - FIXED
 
+
+            ////////////////////////////////
+            //////       WARNING      //////
+            //////  MESSY CODE AHEAD  //////
+            ////////////////////////////////
+
+
 namespace LeagueInfo
 {
     class Program
@@ -18,11 +25,12 @@ namespace LeagueInfo
             NewScreen();
             Console.WriteLine("Changelog:");
             Console.WriteLine("1.0\nInitial release!");
+            Console.WriteLine("1.1\nNow counts amount of times you've played with/against other Summoners");
             Console.WriteLine();
             Console.WriteLine("Press any key to start!");
             Console.ReadKey();
             
-            if(!Directory.Exists(@"Summoners") || Directory.GetFiles(@"Summoners\").Length == 0)
+            if(!Directory.Exists(@"Summoners") || Directory.GetDirectories(@"Summoners\").Length == 0)
             {
                 NewScreen();
                 Console.WriteLine("Couldn't find any existing Summoners!\n");
@@ -34,11 +42,9 @@ namespace LeagueInfo
             {
                 MainMenu();
             }
+
+            Console.WriteLine("How did you get here this should be impossible! D:");
             Console.ReadKey();
-
-
-            //
-            
         }
 
         static void MainMenu()
@@ -47,7 +53,7 @@ namespace LeagueInfo
             int answer = 0;
 
             Console.WriteLine("What do you want to do?");
-            Console.WriteLine("1. Go to the Summoner list");
+            Console.WriteLine("1. Open the results folder");
             Console.WriteLine("2. Add a new Summoner");
 
             try
@@ -87,42 +93,12 @@ namespace LeagueInfo
         static void SummonerList()
         {
             NewScreen();
-            Console.WriteLine("Which summoner?");
 
-            string[] summonersPaths = Directory.GetFiles(@"Summoners\");
-            string[] summoners = new string[summonersPaths.Length];
-            var numberOfSumm = 1;
-            //var i = 0;
-
-            for(var i = 0; i < summonersPaths.Length; i++)
-            {
-                summoners[i] = Path.GetFileNameWithoutExtension(summonersPaths[i]).ToString();
-
-                Console.WriteLine(numberOfSumm + ". " + summoners[i]);
-                numberOfSumm++;
-            }
-            
-            try
-            {
-                var answer = int.Parse(Console.ReadLine());
-
-                SummonerInfo(summoners[answer-1]);
-            }catch(FormatException)
-            {
-                Console.WriteLine("Invalid input!");
-            }
-        }
-
-        static void SummonerInfo(string summoner)
-        {
-            NewScreen();
-
-            Console.WriteLine(summoner);
-            Console.WriteLine("------------------------");
-            Console.WriteLine("Opening text file...");
+            Console.WriteLine("Opening folder...");
             Console.WriteLine("\nPress any key to go back to the main menu!");
 
-            Process.Start("Notepad.exe", @"Summoners\" + summoner + ".txt");
+            Process.Start(@"Summoners\");
+            //Process.Start("Notepad.exe", @"Summoners\" + summoner + ".txt");
 
             Console.ReadKey();
             MainMenu();
@@ -137,39 +113,75 @@ namespace LeagueInfo
             Console.WriteLine("Case-sensitive!");
             string summonerName = Console.ReadLine();
 
-            Console.WriteLine("Please enter where your League of Legends is installed!\nDon't forget the \\ at the end!");
+            NewScreen();
+            Console.WriteLine("Summoner Name:\n" + summonerName);
+            Console.WriteLine("\nPlease enter where your League of Legends is installed!");
             Console.WriteLine("(The one with the RADS and logs folders in it)");
             Console.WriteLine("(For example: C:\\Riot Games\\League of Legends\\)");
             Console.WriteLine("Case-sensitive!");
             string installDir = Console.ReadLine();
+            if(installDir.Equals("debuge"))
+            {
+                installDir = @"E:\Program Files (x86)\League of Legends\";
+            }
+            if (installDir.Equals("debugc"))
+            {
+                installDir = @"C:\League of Legends\";
+            }
+            if(!installDir.EndsWith("\\"))
+            {
+                installDir = installDir + "\\";
+            }
+
+            bool canContinue = false;
+            int minimumPlayedGames = 15;
+            do
+            {
+                try
+                {
+                    NewScreen();
+                    Console.WriteLine("Summoner Name:\n" + summonerName);
+                    Console.WriteLine("\nInstall Path:\n" + installDir);
+                    Console.WriteLine("\nPlease enter the minimum amount of games played with a Summoner\nfor them to show up in the Summoners Played list.");
+                    minimumPlayedGames = int.Parse(Console.ReadLine());
+                    canContinue = true;
+                }
+                catch (FormatException)
+                {
+                    Console.WriteLine("Invalid input! Please enter a number above 0!");
+                    canContinue = false;
+                    Console.ReadKey();
+                }
+            } while (!canContinue);
+
+            ReadLogs(summonerName, installDir, minimumPlayedGames);
 
             NewScreen();
-            Console.WriteLine("Summoner Name:\n" + summonerName);
-            Console.WriteLine("Install Path:\n" + installDir);
-            Console.WriteLine();
-            StartRead(summonerName, installDir);
+            Count(summonerName);
 
-            NewScreen();
-            Console.WriteLine("Done analyzing. Press any key to start compile the data!");
-            Console.ReadKey();
-            NewScreen();
-            CountChampions(summonerName);
-
+            Console.WriteLine("Done!");
             Console.WriteLine("\nPress any key go to the main menu!");
             Console.ReadKey();
             MainMenu();
         }
 
-        static void StartRead(string summonerName, string gamePath)
+        static void ReadLogs(string summonerName, string gamePath, int minimumGames)
         {
+            Directory.CreateDirectory(@"Summoners\" + summonerName);
             string logPath = gamePath + @"Logs\Game - R3d Logs\";
-            string infoPath = @"Summoners\" + summonerName + "Temp.txt";
+            string tempPath = @"Summoners\Temp.txt";
+            string summonerInfoPath = @"Summoners\" + summonerName + @"\Summoners.txt";
             string dirPath = @"Summoners";
             bool inGame = false;
+            File.WriteAllText(tempPath, String.Empty); // Empty old file if there was one.
+            File.WriteAllText(summonerInfoPath, String.Empty); 
+            TextWriter tw = new StreamWriter(tempPath, true);
+            TextWriter tw2 = new StreamWriter(summonerInfoPath, true);
+            Dictionary<string, int> summonersPlayed = new Dictionary<string, int>();
 
             try
             {
-                // Creating directory to store info, creating path to .txt
+                // Creating directory to store info in
                 DirectoryInfo di = Directory.CreateDirectory(dirPath);
 
                 string[] logs = Directory.GetFiles(logPath, "*_r3dlog.txt"); // Get all r3dlogs in logPath's directory.
@@ -184,10 +196,8 @@ namespace LeagueInfo
                 Console.WriteLine("Press any key to start analyzing logs!");
                 Console.ReadKey();
 
-                // Analyze preparations
-                File.WriteAllText(infoPath, String.Empty); // Empty old file if there was one
-                TextWriter tw = new StreamWriter(infoPath, true);
-                int logsAnalyzed = 0; // Last minute int declarations
+
+                int logsAnalyzed = 0; // Counting logs
                 int logsWritten = 0;
 
                 foreach (string log in logs) // For each log-file (..._r3dlog.txt)
@@ -199,27 +209,57 @@ namespace LeagueInfo
 
                     string[] lines = File.ReadAllLines(@log); // Get all the text in the file
                     string champion = " created for "; // Declare what string means that there is a champion loaded in
+                    bool isSummonerPlaying = false;
 
-                    foreach(string line in lines) // For each line in the log-file
+                    // For each line in the log-file
+                    foreach(string line in lines) 
                     {
-                        if(File.Exists(infoPath)) // Not sure if this is needed but I can't be bothered to check. :)
+                        // Not sure if this is needed but I can't be bothered to check. :)
+                        if (File.Exists(tempPath))
                         {
-                            if (line.Contains(champion) && line.Contains(summonerName)) // If a string has both a champion loading in and it is controlled by the specified Summoner
+                            // If a string has both a champion loading in and it is controlled by the specified Summoner
+                            if (line.Contains(champion) && line.Contains(summonerName)) 
                             {
+                                isSummonerPlaying = true;
+
                                 // Lots of trimming of the raw text
                                 string tempLine = line.Remove(0, 62);
-
                                 int index = tempLine.IndexOf("(");
-
                                 tempLine = tempLine.Remove(index, 16 + summonerName.Length);
 
                                 Console.WriteLine("Writing \"" + tempLine + "\" to text file.");
-                                tw.WriteLine(tempLine); // Writing the text into the file located at infoPath (\Summoners\summonerName.txt)
+                                tw.WriteLine(tempLine); // Writing the text into the file located at infoPath (\Summoners\summonerNameTemp.txt)
                                 logsWritten++;
                             }
                         }
                     }
-   
+
+                    // Don't know if this is the best way to do this, but it's the easiest way I can come up with right now.
+                    // Since we need to know if the log file contains the summonerName first we read through it again.
+                    foreach (string line in lines)
+                    {
+                        // If a champion is being loaded in and it's not being played by summonerName, check if summonerName is in the match. If not, do.
+                        if (line.Contains(champion) && !line.Contains(summonerName) && isSummonerPlaying && !line.Contains(" Bot"))
+                        {
+                            string tempStr = line;
+                            tempStr = tempStr.Substring(tempStr.LastIndexOf("created for"));
+                            string otherSummoner = tempStr.Remove(0, 12);
+
+                            if (summonersPlayed.ContainsKey(otherSummoner))
+                            {
+                                summonersPlayed[otherSummoner] += 1;
+                            }
+                            else if (!summonersPlayed.ContainsKey(otherSummoner))
+                            {
+                                summonersPlayed.Add(otherSummoner, 1);
+                            }
+                            else
+                            {
+                                Console.WriteLine("bullshit"); // impossibru
+                            }
+                        }
+                    }
+
                     logsAnalyzed++;
                 }
 
@@ -239,28 +279,55 @@ namespace LeagueInfo
                 inGame = true;
             }
 
+
+            List<KeyValuePair<string, int>> myList = summonersPlayed.ToList();
+            myList.Sort(
+                delegate(KeyValuePair<string, int> firstPair,
+                KeyValuePair<string, int> nextPair)
+                {
+                    return nextPair.Value.CompareTo(firstPair.Value);
+                }
+            );
+
+            foreach (KeyValuePair<string, int> entry in myList)
+            {
+                if(entry.Value > minimumGames)
+                {
+                    string tempStr = entry.ToString();
+                    tempStr = tempStr.Remove(1);
+                    tempStr = tempStr.Remove(tempStr.Length-1);
+
+                    tw2.WriteLine(tempStr);
+                }
+            }
+            tw2.Close();
+
+
             if(!inGame)
             {
                 Console.WriteLine("Done!");
             }
             else
             {
-                Console.WriteLine("An error occurred and the program will\nprobably not be able to compile the data.");
+                Console.WriteLine("\nAn error occurred and the program will\nnot be able to compile the data.");
+                Console.WriteLine("Press any key to go back to the main menu!");
+                Console.ReadKey();
+                MainMenu();
             }
             Console.ReadKey();
         }
 
-        static void CountChampions(string summonerName)
+        static void Count(string summonerName)
         {
             try
             {
-                string dataPath = @"Summoners\" + summonerName + "Temp.txt";
-                string dirPath = @"Summoners\" + summonerName + ".txt";
+                string tempPath = @"Summoners\Temp.txt";
+                string dirPath = @"Summoners\" + summonerName + @"\Champions.txt";
 
                 File.WriteAllText(dirPath, String.Empty);
                 Dictionary<string, int> dic = new Dictionary<string, int>();
 
-                string[] analyzeResult = File.ReadAllLines(dataPath);
+                string[] analyzeResult = File.ReadAllLines(tempPath);
                 Array.Sort(analyzeResult);
                 TextWriter tw = new StreamWriter(dirPath, true);
 
@@ -271,15 +338,14 @@ namespace LeagueInfo
                     {
                         dic[champ] += 1;
                     }
+                    else if (!dic.ContainsKey(champ))
+                    {
+                        dic.Add(champ, 1);
+                    }
                     else
-                        if (!dic.ContainsKey(champ))
-                        {
-                            dic.Add(champ, 1);
-                        }
-                        else
-                        {
-                            Console.WriteLine("bullshit"); // impossibru
-                        }
+                    {
+                        Console.WriteLine("bullshit"); // impossibru
+                    }
                 }
 
                 // Time to start using Champions.txt
@@ -289,19 +355,20 @@ namespace LeagueInfo
                 {
                     try
                     {
-                        Console.WriteLine(champion + ": " + dic[champion]);
+                        //Console.WriteLine(champion + ": " + dic[champion]);
                         tw.WriteLine(champion + ": " + dic[champion]);
                     }
                     catch (KeyNotFoundException)
                     {
-                        Debug.WriteLine(champion + " not found in Dictionary");
+                        Debug.WriteLine(champion + " hasn't been played.");
                     }
                 }
 
-                // Remove temporary file
-                File.Delete(dataPath);
-
                 tw.Close();
+
+                // Remove temporary file
+                File.Delete(tempPath);
+
             }catch(IOException e)
             {
                 if(e.Message.Contains("cannot access"))
@@ -319,7 +386,7 @@ namespace LeagueInfo
             Console.ForegroundColor = ConsoleColor.Gray;
             Console.WriteLine("------------------------");
             Console.WriteLine("LLR - League Log Reader");
-            Console.WriteLine("Version 1.0");
+            Console.WriteLine("Version 1.1");
             Console.WriteLine("Created by bq");
             Console.WriteLine("------------------------\n");
             Console.ForegroundColor = ConsoleColor.White;
