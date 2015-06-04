@@ -48,7 +48,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>EE4EB3237B7B679B2CF3F2275647F88D96ABAD59</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>A0A01967267DD025E2C84D5C9AF9131C65A508C8</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
     <ManifestKeyFile>LeagueLogReader_TemporaryKey.pfx</ManifestKeyFile>
