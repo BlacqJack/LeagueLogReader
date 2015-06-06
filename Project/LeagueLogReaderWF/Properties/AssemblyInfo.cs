@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Resources;
 
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
@@ -8,9 +9,9 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyTitle("LeagueLogReader")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("Caperio AB")]
+[assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("LeagueLogReader")]
-[assembly: AssemblyCopyright("Copyright © Caperio AB 2014")]
+[assembly: AssemblyCopyright("")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
 
@@ -20,7 +21,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("4458d239-d651-4a5c-843a-27ab30b2ffe1")]
+[assembly: Guid("56c7d11a-2612-4acc-8b27-a0e8832e7ade")]
 
 // Version information for an assembly consists of the following four values:
 //
@@ -33,4 +34,5 @@ using System.Runtime.InteropServices;
 // by using the '*' as shown below:
 // [assembly: AssemblyVersion("1.0.*")]
 [assembly: AssemblyVersion("1.0.0.0")]
-[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: NeutralResourcesLanguageAttribute("en")]
