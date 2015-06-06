@@ -48,10 +48,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestCertificateThumbprint>A0A01967267DD025E2C84D5C9AF9131C65A508C8</ManifestCertificateThumbprint>
+    <ManifestCertificateThumbprint>00C0A00B7A9180E9B70FD0A9279A2007D5DB26E4</ManifestCertificateThumbprint>
   </PropertyGroup>
   <PropertyGroup>
-    <ManifestKeyFile>LeagueLogReader_TemporaryKey.pfx</ManifestKeyFile>
+    <ManifestKeyFile>LeagueLogReader_1_TemporaryKey.pfx</ManifestKeyFile>
   </PropertyGroup>
   <PropertyGroup>
     <GenerateManifests>true</GenerateManifests>
@@ -74,6 +74,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
+    <None Include="LeagueLogReader_1_TemporaryKey.pfx" />
     <None Include="LeagueLogReader_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>

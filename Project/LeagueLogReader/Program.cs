@@ -119,11 +119,11 @@ namespace LeagueInfo
 			Console.WriteLine("(For example: C:\\Riot Games\\League of Legends\\)");
 			Console.WriteLine("Case-sensitive!");
 			string installDir = Console.ReadLine();
-			if (installDir.Equals("debuge"))
+			if (installDir.Equals("dl"))
 			{
-				installDir = @"E:\Program Files (x86)\League of Legends\";
+				installDir = @"C:\Riot Games\League of Legends\";
 			}
-			if (installDir.Equals("debugc"))
+			if (installDir.Equals("ds"))
 			{
 				installDir = @"C:\League of Legends\";
 			}
@@ -199,43 +199,34 @@ namespace LeagueInfo
 
 				int logsAnalyzed = 0; // Counting logs
 				int logsWritten = 0;
+				List<string> champions = new List<string>();
+				string champion = " created for "; // Declare what string means that there is a champion loaded in
+				bool isSummonerPlaying = false;
 
-				foreach (string log in logs) // For each log-file (..._r3dlog.txt)
+				NewScreen();
+				Console.WriteLine("Working. Please wait...");
+
+				// For each log-file (..._r3dlog.txt)
+				foreach (string log in logs)
 				{
-					NewScreen();
-					Console.WriteLine("Working. Please wait...");
-					Console.WriteLine("Logs analyzed: " + logsAnalyzed.ToString());
-					Console.WriteLine("Matches found: " + logsWritten);
-
 					string[] lines = File.ReadAllLines(@log); // Get all the text in the file
-					string champion = " created for "; // Declare what string means that there is a champion loaded in
-					bool isSummonerPlaying = false;
 
 					// For each line in the log-file
-					using (var tw = new StreamWriter(tempPath))
+					foreach (string line in lines)
 					{
-						tw.AutoFlush = true;
-
-						foreach (string line in lines)
+						// If a string has both a champion loading in and it is controlled by the specified Summoner
+						if (line.Contains(champion) && line.Contains(summonerName))
 						{
-							// Not sure if this is needed but I can't be bothered to check. :)
-							if (File.Exists(tempPath))
-							{
-								// If a string has both a champion loading in and it is controlled by the specified Summoner
-								if (line.Contains(champion) && line.Contains(summonerName))
-								{
-									isSummonerPlaying = true;
+							isSummonerPlaying = true;
 
-									// Lots of trimming of the raw text
-									string tempLine = line.Remove(0, 62);
-									int index = tempLine.IndexOf("(");
-									tempLine = tempLine.Remove(index, 16 + summonerName.Length);
+							// Lots of trimming of the raw text
+							string tempLine = line.Remove(0, 62);
+							int index = tempLine.IndexOf("(");
+							tempLine = tempLine.Remove(index, 16 + summonerName.Length);
 
-									Console.WriteLine("Writing \"" + tempLine + "\" to text file.");
-									tw.WriteLine(tempLine); // Writing the text into the file located at infoPath (\Summoners\summonerNameTemp.txt)
-									logsWritten++;
-								}
-							}
+							champions.Add(tempLine);
+
+							logsWritten++;
 						}
 					}
 
@@ -246,10 +237,12 @@ namespace LeagueInfo
 						// If a champion is being loaded in and it's not being played by summonerName, check if summonerName is in the match. If not, do.
 						if (line.Contains(champion) && !line.Contains(summonerName) && isSummonerPlaying && !line.Contains(" Bot"))
 						{
+							// Trimming
 							string tempStr = line;
 							tempStr = tempStr.Substring(tempStr.LastIndexOf("created for"));
 							string otherSummoner = tempStr.Remove(0, 12);
 
+							// Add summoner to list
 							if (summonersPlayed.ContainsKey(otherSummoner))
 							{
 								summonersPlayed[otherSummoner] += 1;
@@ -260,12 +253,21 @@ namespace LeagueInfo
 							}
 							else
 							{
-								Console.WriteLine("bullshit"); // impossibru
+								Console.WriteLine("bullshit");
 							}
 						}
 					}
 
 					logsAnalyzed++;
+				}
+
+				using (var tw = new StreamWriter(tempPath, false, Encoding.ASCII, 0x10000))
+				{
+					foreach (string str in champions)
+					{
+						// Writing the text into the file located at infoPath (\Summoners\summonerNameTemp.txt)
+						tw.WriteLine(str);
+					}
 				}
 			}
 			catch (IOException e) // Most likely access denied error
@@ -292,8 +294,6 @@ namespace LeagueInfo
 				}
 			);
 
-			//TextWriter tw2 = new StreamWriter(summonerInfoPath, true);
-
 			using (var tw2 = new StreamWriter(summonerInfoPath))
 			{
 				tw2.AutoFlush = true;
@@ -310,10 +310,9 @@ namespace LeagueInfo
 				}
 			}
 
-
 			if (!inGame)
 			{
-				Console.WriteLine("Done!");
+				Console.WriteLine("Done! Press any key to continue!");
 			}
 			else
 			{
@@ -373,7 +372,7 @@ namespace LeagueInfo
 						{
 							Debug.WriteLine(champion + " hasn't been played.");
 						}
-					} 
+					}
 				}
 
 				// Remove temporary file
